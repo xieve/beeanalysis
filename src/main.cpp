@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <SD.h>
+#include <SPI.h>
 
 // roessner.pascal@gmail.com
 
@@ -27,6 +29,8 @@ int timeout = 5000; // how many millis until we time out
 unsigned long pctimer = 0;
 int pctimout = 1000; // how many millis until we print to screen
 
+File logfile;
+
 const char* modeConvert(int var) {
 	if (var == NOTHING) return ("NOTHING");
 	else if (var == BACK) return ("BACK");
@@ -40,6 +44,8 @@ void setup() {
 	pinMode(led1, OUTPUT);
 	pinMode(led2, OUTPUT);
 	Serial.begin(9600);
+	SD.begin();
+	logfile = SD.open("log.txt");
   pctimer = millis() + pctimout;
 }
 
@@ -58,6 +64,17 @@ void loop() {
     Serial.print(modeConvert(laststate));
 		Serial.print("; start_state: ");
 		Serial.println(modeConvert(start_state));
+ 		logfile.print("Time: ");
+ 		logfile.print(millis()/1000);
+ 		logfile.print(", Amount: in1: ");
+ 		logfile.print(in1cnt);
+ 		logfile.print("; in2: ");
+ 		logfile.print(in2cnt);
+ 		logfile.print("; laststate: ");
+    logfile.print(modeConvert(laststate));
+ 		logfile.print("; start_state: ");
+ 		logfile.println(modeConvert(start_state));
+		logfile.flush();
 	}
 
 	//sensorencheck
