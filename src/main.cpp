@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <SD.h>
 #include <SPI.h>
+#include <SD.h>
 
 // roessner.pascal@gmail.com
 
@@ -29,8 +29,6 @@ int timeout = 5000; // how many millis until we time out
 unsigned long pctimer = 0;
 int pctimout = 1000; // how many millis until we print to screen
 
-File logfile;
-
 const char* modeConvert(int var) {
 	if (var == NOTHING) return ("NOTHING");
 	else if (var == BACK) return ("BACK");
@@ -44,19 +42,32 @@ void setup() {
 	pinMode(led1, OUTPUT);
 	pinMode(led2, OUTPUT);
 	Serial.begin(9600);
-	SD.begin();
-	logfile = SD.open("log.txt");
+	if (!SD.begin()) {
+		Serial.println("initialization failed!");
+		return;
+	}
   pctimer = millis() + pctimout;
 }
 
 void loop() {
-	 //stati an computer
-   // can cause problems when millis overflows after "long" runtimes
-   if (millis() > pctimer) {
+	// can cause problems when millis overflows after "long" runtimes
+	if (millis() > pctimer) {
     pctimer = millis() + pctimout;
-		Serial.print("Time: ");
+		File logfile = SD.open("log.txt", FILE_WRITE);
+		if (logfile) {
+ 			logfile.print("Time: ");
+ 			logfile.print(millis()/1000);
+ 			logfile.print(", Amount: in1: ");
+ 			logfile.print(in1cnt);
+ 			logfile.print("; in2: ");
+ 			logfile.println(in2cnt);
+			logfile.close();
+		} else {
+			Serial.print("Not on SD: ");
+		}
+		Serial.print("time: ");
 		Serial.print(millis()/1000);
-		Serial.print(", Amount: in1: ");
+		Serial.print(", amount: in1: ");
 		Serial.print(in1cnt);
 		Serial.print("; in2: ");
 		Serial.print(in2cnt);
@@ -64,17 +75,6 @@ void loop() {
     Serial.print(modeConvert(laststate));
 		Serial.print("; start_state: ");
 		Serial.println(modeConvert(start_state));
- 		logfile.print("Time: ");
- 		logfile.print(millis()/1000);
- 		logfile.print(", Amount: in1: ");
- 		logfile.print(in1cnt);
- 		logfile.print("; in2: ");
- 		logfile.print(in2cnt);
- 		logfile.print("; laststate: ");
-    logfile.print(modeConvert(laststate));
- 		logfile.print("; start_state: ");
- 		logfile.println(modeConvert(start_state));
-		logfile.flush();
 	}
 
 	//sensorencheck
