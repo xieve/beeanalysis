@@ -44,7 +44,6 @@ void setup() {
 	Serial.begin(9600);
 	if (!SD.begin()) {
 		Serial.println("initialization failed!");
-		return;
 	}
   pctimer = millis() + pctimout;
 }
@@ -56,7 +55,7 @@ void loop() {
 		File logfile = SD.open("log.txt", FILE_WRITE);
 		if (logfile) {
  			logfile.print("Time: ");
- 			logfile.print(millis()/1000);
+ 			logfile.print(millis()/1000); //hh:mm:ss|dd.mm.yy
  			logfile.print(", Amount: in1: ");
  			logfile.print(in1cnt);
  			logfile.print("; in2: ");
