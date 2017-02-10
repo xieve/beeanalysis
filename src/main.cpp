@@ -13,6 +13,7 @@ const int in1 = 10;
 const int in2 = 11;
 const int led1 = 13;
 const int led2 = 12;
+const int firstIRLED = 22;
 
 long int in1cnt = 0;
 long int in2cnt = 0;
@@ -77,82 +78,68 @@ void loop() {
 		Serial.println(modeConvert(start_state));
 	}
 
-	//sensorencheck
-  in1state = digitalRead(in1) == LOW;
-	in2state = digitalRead(in2) == LOW;
+	for (int curSlot; (curSlot < 24); curSlot++) {
+		//Slot-IR-LED on
+		digitalWrite(curSlot + firstIRLED, HIGH);
+		delayMicroseconds(1);
 
-	//led-ansteuerung
-	if (in1state) {
-		digitalWrite(led1, HIGH);
-	}else{
-		digitalWrite(led1, LOW);
+		//sensorcheck
+  	in1state = digitalRead(in1) == LOW;
+		in2state = digitalRead(in2) == LOW;
+		digitalWrite(curSlot + firstIRLED, LOW);
+
+		// sensorenlogik + counter
+  	// Two possible ways things can happen
+  	// either a bee comes from one direction - or the other
+  	// first direction we have:
+  	//      NOTHING -> FRONT -> BOTH -> BACK -> NOTHING
+  	// other direction:
+  	//      NOTHING -> BACK -> BOTH -> FRONT -> NOTHING
+  	// Let in1state correspond to FRONT
+  	// Let in2state correspond to BACK
+
+  	// we should probably also include a default reset in case we
+  	// dont get all clean results
+  	// can cause problems when millis overflows after "_long_" runtimes
+  	if (millis() > milliscounter) {
+    	if (start_state > NOTHING) {
+      	start_state = NOTHING;
+      	laststate = NOTHING;
+      	Serial.print("Reset based on timeout\n");
+    	}
+    	milliscounter = 0;
+  	}
+
+  	if (in1state && !in2state && start_state == NOTHING) {
+  		start_state = FRONT;
+    	laststate = FRONT;
+    	milliscounter = millis() + timeout;
+  	} else if (!in1state && in2state && start_state == NOTHING) {
+    	start_state = BACK;
+    	laststate = BACK;
+    	milliscounter = millis() + timeout;
+  	} else if (start_state > NOTHING) {
+    	if (start_state == FRONT) {
+      	if (in1state && in2state && laststate == FRONT) laststate = BOTH;
+      	else if (!in1state && in2state && laststate == BOTH) laststate = BACK;
+      	else if (!in1state && !in2state && laststate == BACK) {
+        	// we have now passed all possible states -> therefore reset and increment
+        	// counter
+        	laststate = NOTHING;
+        	start_state = NOTHING;
+        	in1cnt ++;
+      	}
+  		} else if (start_state == BACK) {
+  			if (in1state && in2state && laststate == BACK) laststate = BOTH;
+    		else if (in1state && !in2state && laststate == BOTH) laststate = FRONT;
+    		else if (!in1state && !in2state && laststate == FRONT) {
+      		// we have now passed all possible states -> therefore reset and increment
+      		// counter
+      		laststate = NOTHING;
+      		start_state = NOTHING;
+      		in2cnt ++;
+    		}
+  		}
+		}
 	}
-	if (in2state) {
-		digitalWrite(led2, HIGH);
-	}else{
-		digitalWrite(led2, LOW);
-	}
-
-	//sensorenlogik + counter
-  // Two possible ways things can happen
-  // either a bee comes from one direction - or the other
-  // first direction we have:
-  //      NOTHING -> FRONT -> BOTH -> BACK -> NOTHING
-  // other direction:
-  //      NOTHING -> BACK -> BOTH -> FRONT -> NOTHING
-  // Let in1state correspond to FRONT
-  // Let in2state correspond to BACK
-
-  // we should probably also include a default reset in case we
-  // dont get all clean results
-  // can cause problems when millis overflows after "_long_" runtimes
-  if (millis() > milliscounter) {
-    if (start_state > NOTHING) {
-      start_state = NOTHING;
-      laststate = NOTHING;
-      Serial.print("Reset based on timeout\n");
-    }
-    milliscounter = 0;
-  }
-
-
-  if (in1state && !in2state && start_state == NOTHING) {
-  	start_state = FRONT;
-    laststate = FRONT;
-    milliscounter = millis() + timeout;
-  }
-  else if (!in1state && in2state && start_state == NOTHING) {
-    start_state = BACK;
-    laststate = BACK;
-    milliscounter = millis() + timeout;
-  } else if (start_state > NOTHING) {
-    if (start_state == FRONT) {
-      if (in1state && in2state && laststate == FRONT) laststate = BOTH;
-      else if (!in1state && in2state && laststate == BOTH) laststate = BACK;
-      else if (!in1state && !in2state && laststate == BACK) {
-        // we have now passed all possible states -> therefore reset and increment
-        // counter
-        laststate = NOTHING;
-        start_state = NOTHING;
-        in1cnt ++;
-      }
-    }
-    else if (start_state == BACK) {
-      if (in1state && in2state && laststate == BACK) laststate = BOTH;
-      else if (in1state && !in2state && laststate == BOTH) laststate = FRONT;
-      else if (!in1state && !in2state && laststate == FRONT) {
-        // we have now passed all possible states -> therefore reset and increment
-        // counter
-        laststate = NOTHING;
-        start_state = NOTHING;
-        in2cnt ++;
-      }
-    }
-  }
-
-  // not sure we need this? should have this?
-  // since we don't have analog pins -- dont think we really
-  // need to wait but we will just keep this short wait
-  delayMicroseconds(10);
-	// delay(1);
 }
