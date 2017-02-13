@@ -2,8 +2,6 @@
 #include <SPI.h>
 #include <SD.h>
 
-// roessner.pascal@gmail.com
-
 #define NOTHING 0
 #define FRONT 1
 #define BOTH 2
