@@ -78,15 +78,17 @@ void loop() {
 		Serial.println(modeConvert(start_state));
 	}
 
-	for (int curSlot; (curSlot < 24); curSlot++) {
-		//Slot-IR-LED on
-		digitalWrite(curSlot + firstIRLED, HIGH);
-		delayMicroseconds(1);
+	digitalWrite(firstIRLED, HIGH);
+	delay(1);
 
+	for (int curSlot; (curSlot < 24); curSlot++) {
 		//sensorcheck
   	in1state = digitalRead(in1) == LOW;
 		in2state = digitalRead(in2) == LOW;
 		digitalWrite(curSlot + firstIRLED, LOW);
+
+		//turn next slot-IR-LED on
+		digitalWrite(curSlot + firstIRLED + 1, HIGH);
 
 		// sensorenlogik + counter
   	// Two possible ways things can happen
