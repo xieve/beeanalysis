@@ -2,8 +2,6 @@
 #include <SPI.h>
 #include <SD.h>
 
-// roessner.pascal@gmail.com
-
 #define NOTHING 0
 #define FRONT 1
 #define BOTH 2
@@ -55,7 +53,7 @@ void loop() {
 		File logfile = SD.open("log.txt", FILE_WRITE);
 		if (logfile) {
  			logfile.print("Time: ");
- 			logfile.print(millis()/1000); //hh:mm:ss|dd.mm.yy
+ 			logfile.print(millis()/1000);
  			logfile.print(", Amount: in1: ");
  			logfile.print(in1cnt);
  			logfile.print("; in2: ");
@@ -77,8 +75,8 @@ void loop() {
 	}
 
 	//sensorencheck
-  in1state = digitalRead(in1) == LOW;
-	in2state = digitalRead(in2) == LOW;
+  in1state = (digitalRead(in1) == LOW);
+	in2state = (digitalRead(in2) == LOW);
 
 	//led-ansteuerung
 	if (in1state) {
@@ -115,20 +113,22 @@ void loop() {
   }
 
 
-  if (in1state && !in2state && start_state == NOTHING) {
+  if (in1state && !in2state && (start_state == NOTHING)) {
   	start_state = FRONT;
     laststate = FRONT;
     milliscounter = millis() + timeout;
   }
-  else if (!in1state && in2state && start_state == NOTHING) {
+  else if (!in1state && in2state && (start_state == NOTHING)) {
     start_state = BACK;
     laststate = BACK;
     milliscounter = millis() + timeout;
   } else if (start_state > NOTHING) {
     if (start_state == FRONT) {
-      if (in1state && in2state && laststate == FRONT) laststate = BOTH;
-      else if (!in1state && in2state && laststate == BOTH) laststate = BACK;
-      else if (!in1state && !in2state && laststate == BACK) {
+      if (in1state && in2state && (laststate == FRONT))
+				laststate = BOTH;
+      else if (!in1state && in2state && (laststate == BOTH))
+				laststate = BACK;
+      else if (!in1state && !in2state && (laststate == BACK)) {
         // we have now passed all possible states -> therefore reset and increment
         // counter
         laststate = NOTHING;
@@ -137,9 +137,11 @@ void loop() {
       }
     }
     else if (start_state == BACK) {
-      if (in1state && in2state && laststate == BACK) laststate = BOTH;
-      else if (in1state && !in2state && laststate == BOTH) laststate = FRONT;
-      else if (!in1state && !in2state && laststate == FRONT) {
+      if (in1state && in2state && (laststate == BACK))
+				laststate = BOTH;
+      else if (in1state && !in2state && (laststate == BOTH))
+				laststate = FRONT;
+      else if (!in1state && !in2state && (laststate == FRONT)) {
         // we have now passed all possible states -> therefore reset and increment
         // counter
         laststate = NOTHING;
@@ -152,6 +154,6 @@ void loop() {
   // not sure we need this? should have this?
   // since we don't have analog pins -- dont think we really
   // need to wait but we will just keep this short wait
-  delayMicroseconds(10);
+  // delayMicroseconds(10);
 	// delay(1);
 }
