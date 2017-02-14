@@ -15,9 +15,9 @@ const int led2 = 12;
 long int in1cnt = 0;
 long int in2cnt = 0;
 
-int start_state;
-int laststate;
-int error;
+int start_state = NOTHING;
+int laststate = NOTHING;
+int error = 0;
 
 bool in1state = false;
 bool in2state = false;
@@ -84,6 +84,7 @@ void loop()
 		if (error == 1)
 		{
 			Serial.print(" Error 1: reset by timeout");
+			error = 0;
 		}
 		Serial.println("");
 	}
@@ -157,7 +158,7 @@ void loop()
 	{
 		if (!in1state && !in2state)
 		{
-			milliscounter = millis() + timeout;
+			//milliscounter = millis() + timeout;
 		}
     else if (start_state == FRONT)
 		{
