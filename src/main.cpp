@@ -15,8 +15,9 @@ const int led2 = 12;
 long int in1cnt = 0;
 long int in2cnt = 0;
 
-int start_state = NOTHING;
-int laststate = NOTHING;
+int start_state;
+int laststate;
+int error;
 
 bool in1state = false;
 bool in2state = false;
@@ -26,8 +27,6 @@ int timeout = 1000; // how many millis until we time out
 
 unsigned long pctimer = 0;
 int pctimout = 1000; // how many millis until we print to screen
-
-char* SerialAppend = "";
 
 const char* modeConvert(int var)
 {
@@ -82,12 +81,11 @@ void loop()
     Serial.print(modeConvert(laststate));
 		Serial.print("; start_state: ");
 		Serial.print(modeConvert(start_state));
-		Serial.print(" ");
-		Serial.println(SerialAppend);
-		if (start_state == BOTH)
+		if (error == 1)
 		{
-			start_state = NOTHING;
+			Serial.print(" Error 1: reset by timeout");
 		}
+		Serial.println("");
 	}
 
 	//sensorencheck
@@ -132,7 +130,7 @@ void loop()
 		{
       start_state = NOTHING;
       laststate = NOTHING;
-      SerialAppend = "RESET BASED ON TIMEOUT";
+      error = 1;
     }
     milliscounter = 0;
   }
