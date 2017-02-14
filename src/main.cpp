@@ -18,42 +18,48 @@ long int in2cnt = 0;
 
 int start_state = NOTHING;
 int laststate = NOTHING;
+int error = 0;
 
 bool in1state = false;
 bool in2state = false;
 
 unsigned long milliscounter = 0;
-int timeout = 5000; // how many millis until we time out
+int timeout = 1000; // how many millis until we time out
 
 unsigned long pctimer = 0;
 int pctimout = 1000; // how many millis until we print to screen
 
-const char* modeConvert(int var) {
+const char* modeConvert(int var)
+{
 	if (var == NOTHING) return ("NOTHING");
 	else if (var == BACK) return ("BACK");
 	else if (var == BOTH) return ("BOTH");
 	else if (var == FRONT) return ("FRONT");
 }
 
-void setup() {
+void setup()
+{
 	pinMode(in1, INPUT);
 	pinMode(in2, INPUT);
 	pinMode(led1, OUTPUT);
 	pinMode(led2, OUTPUT);
 	Serial.begin(9600);
-	if (!SD.begin()) {
+	if (!SD.begin())
+	{
 		Serial.println("initialization failed!");
-		return;
 	}
   pctimer = millis() + pctimout;
 }
 
-void loop() {
+void loop()
+{
 	// can cause problems when millis overflows after "long" runtimes
-	if (millis() > pctimer) {
+	if (millis() > pctimer)
+	{
     pctimer = millis() + pctimout;
 		File logfile = SD.open("log.txt", FILE_WRITE);
-		if (logfile) {
+		if (logfile)
+		{
  			logfile.print("Time: ");
  			logfile.print(millis()/1000);
  			logfile.print(", Amount: in1: ");
@@ -61,7 +67,9 @@ void loop() {
  			logfile.print("; in2: ");
  			logfile.println(in2cnt);
 			logfile.close();
-		} else {
+		}
+		else
+		{
 			Serial.print("Not on SD: ");
 		}
 		Serial.print("time: ");
@@ -73,13 +81,19 @@ void loop() {
 		Serial.print("; laststate: ");
     Serial.print(modeConvert(laststate));
 		Serial.print("; start_state: ");
-		Serial.println(modeConvert(start_state));
+		Serial.print(modeConvert(start_state));
+		if (error == 1)
+		{
+			Serial.print(" Error 1: reset by timeout");
+			error = 0;
+		}
+		Serial.println("");
 	}
-
 	digitalWrite(firstIRLED, HIGH);
-	delay(1);
+	delay(10);
 
-	for (int curSlot; (curSlot < 24); curSlot++) {
+	for (int curSlot; (curSlot < 24); curSlot++)
+	{
 		//sensorcheck
   	in1state = digitalRead(in1) == LOW;
 		in2state = digitalRead(in2) == LOW;
@@ -88,7 +102,25 @@ void loop() {
 		//turn next slot-IR-LED on
 		digitalWrite(curSlot + firstIRLED + 1, HIGH);
 
-		// sensorenlogik + counter
+		//led-ansteuerung
+		if (in1state || in2state)
+		{
+			digitalWrite(led1, HIGH);
+		}
+		else
+		{
+			digitalWrite(led1, LOW);
+		}
+		if (in1state != in2state)
+		{
+			digitalWrite(led2, HIGH);
+		}
+		else
+		{
+			digitalWrite(led2, LOW);
+		}
+
+		//sensorenlogik + counter
   	// Two possible ways things can happen
   	// either a bee comes from one direction - or the other
   	// first direction we have:
@@ -101,45 +133,82 @@ void loop() {
   	// we should probably also include a default reset in case we
   	// dont get all clean results
   	// can cause problems when millis overflows after "_long_" runtimes
-  	if (millis() > milliscounter) {
-    	if (start_state > NOTHING) {
+
+		/* if (millis() > milliscounter)
+		{
+    	if (start_state > NOTHING)
+			{
       	start_state = NOTHING;
-      	laststate = NOTHING;
-      	Serial.print("Reset based on timeout\n");
+	      laststate = NOTHING;
+      	error = 1;
     	}
     	milliscounter = 0;
-  	}
+  		}*/
 
-  	if (in1state && !in2state && start_state == NOTHING) {
-  		start_state = FRONT;
-    	laststate = FRONT;
-    	milliscounter = millis() + timeout;
-  	} else if (!in1state && in2state && start_state == NOTHING) {
-    	start_state = BACK;
-    	laststate = BACK;
-    	milliscounter = millis() + timeout;
-  	} else if (start_state > NOTHING) {
-    	if (start_state == FRONT) {
-      	if (in1state && in2state && laststate == FRONT) laststate = BOTH;
-      	else if (!in1state && in2state && laststate == BOTH) laststate = BACK;
-      	else if (!in1state && !in2state && laststate == BACK) {
+  	if (start_state == NOTHING)
+		{
+			if (in1state && !in2state)
+			{
+				start_state = FRONT;
+	    	laststate = FRONT;
+			}
+			else if (!in1state && in2state)
+			{
+				start_state = BACK;
+	    	laststate = BACK;
+			}
+			else if (in1state && in2state)
+			{
+				start_state = BOTH;
+				laststate = BOTH;
+			}
+  	}
+		else if (start_state > NOTHING)
+		{
+			if (start_state == FRONT)
+			{
+      	if (in1state && in2state && (laststate == FRONT))
+				{
+					laststate = BOTH;
+				}
+      	else if (!in1state && in2state && (laststate == BOTH))
+				{
+					laststate = BACK;
+				}
+      	else if (!in1state && !in2state && (laststate == BACK))
+				{
         	// we have now passed all possible states -> therefore reset and increment
         	// counter
         	laststate = NOTHING;
         	start_state = NOTHING;
-        	in1cnt ++;
+        	in1cnt++;
       	}
-  		} else if (start_state == BACK) {
-  			if (in1state && in2state && laststate == BACK) laststate = BOTH;
-    		else if (in1state && !in2state && laststate == BOTH) laststate = FRONT;
-    		else if (!in1state && !in2state && laststate == FRONT) {
-      		// we have now passed all possible states -> therefore reset and increment
-      		// counter
-      		laststate = NOTHING;
-      		start_state = NOTHING;
-      		in2cnt ++;
-    		}
-  		}
+    	}
+    	else if (start_state == BACK)
+			{
+      	if (in1state && in2state && (laststate == BACK))
+				{
+					laststate = BOTH;
+				}
+      	else if (in1state && !in2state && (laststate == BOTH))
+				{
+					laststate = FRONT;
+				}
+      	else if (!in1state && !in2state && (laststate == FRONT))
+				{
+        	// we have now passed all possible states -> therefore reset and increment
+        	// counter
+        	laststate = NOTHING;
+        	start_state = NOTHING;
+        	in2cnt++;
+      	}
+    	}
+  	}
+		if (!in1state && !in2state && start_state > NOTHING)
+		{
+			start_state = NOTHING;
+			laststate = NOTHING;
+			error = 1;
 		}
 	}
 }
