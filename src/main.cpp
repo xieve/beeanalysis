@@ -195,9 +195,10 @@ void loop()
       }
     }
   }
-	if (!in1state && !in2state)
+	if (!in1state && !in2state && start_state > NOTHING)
 	{
 		start_state = NOTHING;
 		laststate = NOTHING;
+		error = 1;
 	}
 }
