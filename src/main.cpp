@@ -125,7 +125,7 @@ void loop()
   // dont get all clean results
   // can cause problems when millis overflows after "_long_" runtimes
 
-	if (millis() > milliscounter)
+	/* if (millis() > milliscounter)
 	{
     if (start_state > NOTHING)
 		{
@@ -134,7 +134,7 @@ void loop()
       error = 1;
     }
     milliscounter = 0;
-  }
+  }*/
 
   if (start_state == NOTHING)
 	{
@@ -156,11 +156,7 @@ void loop()
   }
 	else if (start_state > NOTHING)
 	{
-		if (!in1state && !in2state)
-		{
-			//milliscounter = millis() + timeout;
-		}
-    else if (start_state == FRONT)
+		if (start_state == FRONT)
 		{
       if (in1state && in2state && (laststate == FRONT))
 			{
@@ -199,4 +195,9 @@ void loop()
       }
     }
   }
+	if (!in1state && !in2state)
+	{
+		start_state = NOTHING;
+		laststate = NOTHING;
+	}
 }
