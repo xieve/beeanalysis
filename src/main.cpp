@@ -47,6 +47,12 @@ void setup()
 	{
 		Serial.println("initialization failed!");
 	}
+	File logfile = SD.open("log.csv", FILE_WRITE);
+	if (logfile)
+	{
+		logfile.println("time,in,out");
+		logfile.close();
+	}
 	pctimer = millis() + pctimout;
 }
 
@@ -56,14 +62,13 @@ void loop()
 	if (millis() > pctimer)
 	{
 		pctimer = millis() + pctimout;
-		File logfile = SD.open("log.txt", FILE_WRITE);
+		File logfile = SD.open("log.csv", FILE_WRITE);
 		if (logfile)
 		{
-			logfile.print("Time: ");
 			logfile.print(millis()/1000);
-			logfile.print(", Amount: in1: ");
+			logfile.print(",");
 			logfile.print(in1cnt);
-			logfile.print("; in2: ");
+			logfile.print(",");
 			logfile.println(in2cnt);
 			logfile.close();
 		}
@@ -83,7 +88,7 @@ void loop()
 		Serial.print(modeConvert(start_state));
 		if (error == 1)
 		{
-			Serial.print(" Error 1: reset by timeout");
+			Serial.print(" Error 1: Did not notice escape");
 			error = 0;
 		}
 		Serial.println("");
