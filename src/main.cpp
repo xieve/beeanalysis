@@ -48,7 +48,13 @@ void setup()
 	{
 		Serial.println("initialization failed!");
 	}
-  pctimer = millis() + pctimout;
+	File logfile = SD.open("log.csv", FILE_WRITE);
+	if (logfile)
+	{
+		logfile.println("in,out");
+		logfile.close();
+	}
+	pctimer = millis() + pctimout;
 }
 
 void loop()
@@ -56,16 +62,13 @@ void loop()
 	// can cause problems when millis overflows after "long" runtimes
 	if (millis() > pctimer)
 	{
-    pctimer = millis() + pctimout;
-		File logfile = SD.open("log.txt", FILE_WRITE);
+		pctimer = millis() + pctimout;
+		File logfile = SD.open("log.csv", FILE_WRITE);
 		if (logfile)
 		{
- 			logfile.print("Time: ");
- 			logfile.print(millis()/1000);
- 			logfile.print(", Amount: in1: ");
- 			logfile.print(in1cnt);
- 			logfile.print("; in2: ");
- 			logfile.println(in2cnt);
+			logfile.print(in1cnt);
+			logfile.print(",");
+			logfile.println(in2cnt);
 			logfile.close();
 		}
 		else
@@ -74,17 +77,21 @@ void loop()
 		}
 		Serial.print("time: ");
 		Serial.print(millis()/1000);
-		Serial.print(", amount: in1: ");
+		Serial.print("; in: ");
 		Serial.print(in1cnt);
-		Serial.print("; in2: ");
+		Serial.print("; out: ");
 		Serial.print(in2cnt);
+		Serial.print("; in1state: ");
+		Serial.print(in1state?"true":"false");
+		Serial.print("; in2state: ");
+		Serial.print(in2state?"true":"false");
 		Serial.print("; laststate: ");
-    Serial.print(modeConvert(laststate));
+		Serial.print(modeConvert(laststate));
 		Serial.print("; start_state: ");
 		Serial.print(modeConvert(start_state));
 		if (error == 1)
 		{
-			Serial.print(" Error 1: reset by timeout");
+			Serial.print(" Error 1: Did not notice escape");
 			error = 0;
 		}
 		Serial.println("");
@@ -95,7 +102,7 @@ void loop()
 	for (int curSlot; (curSlot < 24); curSlot++)
 	{
 		//sensorcheck
-  	in1state = digitalRead(in1) == LOW;
+		in1state = digitalRead(in1) == LOW;
 		in2state = digitalRead(in2) == LOW;
 		digitalWrite(curSlot + firstIRLED, LOW);
 
@@ -121,89 +128,89 @@ void loop()
 		}
 
 		//sensorenlogik + counter
-  	// Two possible ways things can happen
-  	// either a bee comes from one direction - or the other
-  	// first direction we have:
-  	//      NOTHING -> FRONT -> BOTH -> BACK -> NOTHING
-  	// other direction:
-  	//      NOTHING -> BACK -> BOTH -> FRONT -> NOTHING
-  	// Let in1state correspond to FRONT
-  	// Let in2state correspond to BACK
+		// Two possible ways things can happen
+		// either a bee comes from one direction - or the other
+		// first direction we have:
+		//			NOTHING -> FRONT -> BOTH -> BACK -> NOTHING
+		// other direction:
+		//			NOTHING -> BACK -> BOTH -> FRONT -> NOTHING
+		// Let in1state correspond to FRONT
+		// Let in2state correspond to BACK
 
-  	// we should probably also include a default reset in case we
-  	// dont get all clean results
-  	// can cause problems when millis overflows after "_long_" runtimes
+		// we should probably also include a default reset in case we
+		// dont get all clean results
+		// can cause problems when millis overflows after "_long_" runtimes
 
 		/* if (millis() > milliscounter)
 		{
-    	if (start_state > NOTHING)
+			if (start_state > NOTHING)
 			{
-      	start_state = NOTHING;
-	      laststate = NOTHING;
-      	error = 1;
-    	}
-    	milliscounter = 0;
-  		}*/
+				start_state = NOTHING;
+				laststate = NOTHING;
+				error = 1;
+			}
+			milliscounter = 0;
+			}*/
 
-  	if (start_state == NOTHING)
+		if (start_state == NOTHING)
 		{
 			if (in1state && !in2state)
 			{
 				start_state = FRONT;
-	    	laststate = FRONT;
+				laststate = FRONT;
 			}
 			else if (!in1state && in2state)
 			{
 				start_state = BACK;
-	    	laststate = BACK;
+				laststate = BACK;
 			}
 			else if (in1state && in2state)
 			{
 				start_state = BOTH;
 				laststate = BOTH;
 			}
-  	}
+		}
 		else if (start_state > NOTHING)
 		{
 			if (start_state == FRONT)
 			{
-      	if (in1state && in2state && (laststate == FRONT))
+				if (in1state && in2state && (laststate == FRONT))
 				{
 					laststate = BOTH;
 				}
-      	else if (!in1state && in2state && (laststate == BOTH))
+				else if (!in1state && in2state && (laststate == BOTH))
 				{
 					laststate = BACK;
 				}
-      	else if (!in1state && !in2state && (laststate == BACK))
+				else if (!in1state && !in2state && (laststate == BACK))
 				{
-        	// we have now passed all possible states -> therefore reset and increment
-        	// counter
-        	laststate = NOTHING;
-        	start_state = NOTHING;
-        	in1cnt++;
-      	}
-    	}
-    	else if (start_state == BACK)
+					// we have now passed all possible states -> therefore reset and increment
+					// counter
+					laststate = NOTHING;
+					start_state = NOTHING;
+					in1cnt++;
+				}
+			}
+			else if (start_state == BACK)
 			{
-      	if (in1state && in2state && (laststate == BACK))
+				if (in1state && in2state && (laststate == BACK))
 				{
 					laststate = BOTH;
 				}
-      	else if (in1state && !in2state && (laststate == BOTH))
+				else if (in1state && !in2state && (laststate == BOTH))
 				{
 					laststate = FRONT;
 				}
-      	else if (!in1state && !in2state && (laststate == FRONT))
+				else if (!in1state && !in2state && (laststate == FRONT))
 				{
-        	// we have now passed all possible states -> therefore reset and increment
-        	// counter
-        	laststate = NOTHING;
-        	start_state = NOTHING;
-        	in2cnt++;
-      	}
-    	}
-  	}
+					// we have now passed all possible states -> therefore reset and increment
+					// counter
+					laststate = NOTHING;
+					start_state = NOTHING;
+					in2cnt++;
+				}
+			}
+		}
 		if (!in1state && !in2state && start_state > NOTHING)
 		{
 			start_state = NOTHING;
